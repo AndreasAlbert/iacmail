@@ -32,7 +32,7 @@ DB_PATH = "sqlite:///db.sqlite"
 engine = sa.create_engine(DB_PATH)
 Session = sa.orm.sessionmaker(bind=engine)
 Base.metadata.create_all(engine, checkfirst=True)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO,format='[%(asctime)s] :: [%(name)s] :: [%(levelname)s] :: %(message)s')
 
 
 def build_message(message_text: str, address: str, subject: str, user_config: dict):
@@ -165,7 +165,7 @@ def send(
         register_result(message_text, [address], failures)
         n_failures += len(failures)
     if n_failures:
-        logger.info(
+        logger.warning(
             f"Failed to send {n_failures} messages out of {len(unsent_addresses)}."
         )
     else:
