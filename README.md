@@ -6,6 +6,7 @@
 git clone git@github.com:AndreasAlbert/iacmail.git
 cd iacmail
 mamba env create
+conda activate iacmail
 pip install -e --no-deps .
 ```
 
