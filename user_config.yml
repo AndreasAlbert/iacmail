@@ -1,0 +1,4 @@
+sender_email: me@myhost.com
+smtp_server: smtp.myhost.com
+smtp_port: 587
+password: "mypassword"

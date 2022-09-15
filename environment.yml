@@ -1,0 +1,8 @@
+name: iacmail
+dependencies:
+  - python >=3.10
+  - typer
+  - tqdm
+  - sqlalchemy
+  - setuptools
+  - pyyaml
