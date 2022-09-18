@@ -5,6 +5,7 @@ import smtplib
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from getpass import getpass
 from pathlib import Path
 from tabnanny import check
@@ -22,6 +23,7 @@ from iacmail.util import (
     read_message_file,
     read_user_config_file,
 )
+import socket
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +34,17 @@ DB_PATH = "sqlite:///db.sqlite"
 engine = sa.create_engine(DB_PATH)
 Session = sa.orm.sessionmaker(bind=engine)
 Base.metadata.create_all(engine, checkfirst=True)
-logging.basicConfig(level=logging.INFO,format='[%(asctime)s] :: [%(name)s] :: [%(levelname)s] :: %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] :: [%(name)s] :: [%(levelname)s] :: %(message)s",
+)
 
 
 def build_message(message_text: str, address: str, subject: str, user_config: dict):
     message = MIMEMultipart()
-    message["From"] = user_config["sender_email"]
+    message["From"] = formataddr(
+        (user_config["sender_name"], user_config["sender_email"])
+    )
     message["To"] = address
     message["Subject"] = subject
     message["Bcc"] = user_config["sender_email"]
@@ -98,14 +105,25 @@ def send_message(
 
     try:
         # Server setup
-        server = smtplib.SMTP(user_config["smtp_server"], user_config["smtp_port"])
+        try:
+            logger.debug(
+                f"Connection to server {user_config['smtp_server']} on port {user_config['smtp_port']}."
+            )
+            server = smtplib.SMTP(user_config["smtp_server"], user_config["smtp_port"])
+        except socket.gaierror as exc:
+            raise RuntimeError(
+                "Could not establish server object: Is your internet connection OK? Server details correct?"
+            ) from exc
+
         server.ehlo()  # Can be omitted
         server.starttls(context=context)  # Secure the connection
         server.ehlo()  # Can be omitted
         server.login(user_config["sender_email"], user_config["password"])
 
         text = message.as_string()
-        failures = server.sendmail(user_config["sender_email"], addresses, text)
+        failures = server.sendmail(
+            user_config["sender_email"], [user_config["sender_email"]] + addresses, text
+        )
     except smtplib.SMTPRecipientsRefused as exc:
         failures = exc.recipients
     # except Exception as exc:
@@ -128,9 +146,15 @@ def split_addresses_by_sent(addresses: list[str], message: str):
 
 @app.command()
 def send(
-    address_file: Path = typer.Option(..., help="File containing one recipient email address per line."),
-    message_file: Path = typer.Option(..., help="File containing the body text for the email."),
-    user_config_file: Path = typer.Option(..., help="File containting the user configuration."),
+    address_file: Path = typer.Option(
+        ..., help="File containing one recipient email address per line."
+    ),
+    message_file: Path = typer.Option(
+        ..., help="File containing the body text for the email."
+    ),
+    user_config_file: Path = typer.Option(
+        ..., help="File containting the user configuration."
+    ),
     subject: str = typer.Option(..., help="Subject for the email."),
 ):
     addresses = read_address_file(address_file)
