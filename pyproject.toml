@@ -1,0 +1,14 @@
+[project]
+name = "iacmail"
+version = "0.1.0"
+description = "A commandline interface for sending emails."
+authors = [
+    {name="Andreas Albert"}
+]
+
+[project.scripts]
+iacmail = "iacmail.cli:app"
+
+[tool.setuptools]
+py-modules = ["iacmail"]
+
