@@ -1,6 +1,10 @@
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import hashlib
 from getpass import getpass
 from pathlib import Path
+import smtplib
+import ssl
 
 import yaml
 
@@ -31,3 +35,41 @@ def read_message_file(message_file: Path) -> str:
 def read_user_config_file(user_config_file: Path) -> dict:
     """Read user configuration from a YAML file."""
     return yaml.load(user_config_file.read_text(), Loader=yaml.SafeLoader)
+
+
+def build_message(message_text: str, address: str, subject: str, user_config: dict) -> MIMEMultipart:
+    """Generates a MIMEMultiPart representation of a message"""
+    message = MIMEMultipart()
+    message["From"] = user_config["sender_email"]
+    message["To"] = address
+    message["Subject"] = subject
+    message["Bcc"] = user_config["sender_email"]
+
+    message.attach(MIMEText(message_text, "plain"))
+    return message
+
+
+
+def send_message(
+    message: MIMEMultipart, addresses: list[str], user_config: dict
+) -> dict:
+    context = ssl.create_default_context()
+    if isinstance(addresses, str):
+        addresses = [addresses]
+
+    try:
+        # Server setup
+        server = smtplib.SMTP(user_config["smtp_server"], user_config["smtp_port"])
+        server.ehlo()  # Can be omitted
+        server.starttls(context=context)  # Secure the connection
+        server.ehlo()  # Can be omitted
+        server.login(user_config["sender_email"], user_config["password"])
+
+        text = message.as_string()
+        failures = server.sendmail(user_config["sender_email"], addresses, text)
+    except smtplib.SMTPRecipientsRefused as exc:
+        failures = exc.recipients
+    finally:
+        server.quit()
+
+    return failures
