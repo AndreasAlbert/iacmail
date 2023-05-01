@@ -37,15 +37,16 @@ def read_user_config_file(user_config_file: Path) -> dict:
     return yaml.load(user_config_file.read_text(), Loader=yaml.SafeLoader)
 
 
-def build_message(message_text: str, address: str, subject: str, user_config: dict) -> MIMEMultipart:
+def build_message(message_text: str, address: str, subject: str, user_config: dict,html:bool = False) -> MIMEMultipart:
     """Generates a MIMEMultiPart representation of a message"""
     message = MIMEMultipart()
     message["From"] = user_config["sender_email"]
     message["To"] = address
     message["Subject"] = subject
-    message["Bcc"] = user_config["sender_email"]
+    # message["Bcc"] = user_config["sender_email"]
 
-    message.attach(MIMEText(message_text, "plain"))
+    mimetype = "html" if html else "plain"
+    message.attach(MIMEText(message_text, mimetype))
     return message
 
 
@@ -66,7 +67,11 @@ def send_message(
         server.login(user_config["sender_email"], user_config["password"])
 
         text = message.as_string()
-        failures = server.sendmail(user_config["sender_email"], addresses, text)
+        failures = server.sendmail(
+            from_addr=user_config["sender_email"],
+            to_addrs=addresses + [user_config["sender_email"]],
+            msg=text
+            )
     except smtplib.SMTPRecipientsRefused as exc:
         failures = exc.recipients
     finally:

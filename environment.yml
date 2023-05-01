@@ -6,3 +6,5 @@ dependencies:
   - sqlalchemy
   - setuptools
   - pyyaml
+  - pandas
+  - openpyxl
