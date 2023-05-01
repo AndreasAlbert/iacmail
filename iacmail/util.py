@@ -1,12 +1,16 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 import hashlib
 from getpass import getpass
 from pathlib import Path
 import smtplib
+import socket
 import ssl
-
+import logging
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 def prompt_password_if_needed(user_config: dict):
@@ -40,7 +44,7 @@ def read_user_config_file(user_config_file: Path) -> dict:
 def build_message(message_text: str, address: str, subject: str, user_config: dict,html:bool = False) -> MIMEMultipart:
     """Generates a MIMEMultiPart representation of a message"""
     message = MIMEMultipart()
-    message["From"] = user_config["sender_email"]
+    message["From"] = formataddr(user_config["sender_name"], user_config["sender_email"])
     message["To"] = address
     message["Subject"] = subject
     # message["Bcc"] = user_config["sender_email"]
@@ -59,8 +63,17 @@ def send_message(
         addresses = [addresses]
 
     try:
-        # Server setup
-        server = smtplib.SMTP(user_config["smtp_server"], user_config["smtp_port"])
+        # Server setup        
+        try:
+            logger.debug(
+                f"Connection to server {user_config['smtp_server']} on port {user_config['smtp_port']}."
+            )
+            server = smtplib.SMTP(user_config["smtp_server"], user_config["smtp_port"])
+        except socket.gaierror as exc:
+            raise RuntimeError(
+                "Could not establish server object: Is your internet connection OK? Server details correct?"
+            ) from exc
+
         server.ehlo()  # Can be omitted
         server.starttls(context=context)  # Secure the connection
         server.ehlo()  # Can be omitted
