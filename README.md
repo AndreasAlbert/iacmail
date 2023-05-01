@@ -6,29 +6,41 @@
 git clone git@github.com:AndreasAlbert/iacmail.git
 cd iacmail
 mamba env create
-conda activate iacmail
+mamba activate iacmail
 pip install -e --no-deps .
 ```
 
 ## Usage
 
-Prepare a file containting the message body:
+
+Prepare an excel sheet containing one row for each recipient:
 
 ```bash
-$ cat message.txt
-> Hi,
-> this is a test message
+$ ls recipients.xlsx
 ```
 
-Prepare a file containg the recipient addresses one per line:
+For example, the sheet could look like this:
+
+| name  | email           |
+| ----- | --------------- |
+| Alice | alice@gmail.com |
+| Bob   | bob@gmail.com   |
+
+We write our email body into a text file:
 
 ```bash
-$ cat addresses.txt
-> some@email.com
-> some_other@email.com
+Hi {name},
+
+your email address is {email}.
+
+Best,
+
+X
 ```
 
-Prepare a file containing one-off configurations:
+Fields enclosed in braces will be replaced with the appropriate values from the input sheet.
+
+Then, we need a file containing one-off configurations:
 
 ```bash
 $ cat user_config.yaml
@@ -40,11 +52,17 @@ $ cat user_config.yaml
 
 If you don't want to save your password in the configuration file, you can also omit it. In that case, the script will prompt you for your password at runtime. You will have to retype it for every run.
 
-Use the command line utility:
+Finally, let's use the command line utility:
 
 ```bash
-iacmail --address-file=address_file.txt --message-file=message.txt --subject="test subject 123" --user-config-file=user_config.yml
+iacmail  --table-path ./recipients.xlsx \
+         --address-column "email" \ 
+         --message-file message.txt \
+         --user-config-file user_config_aa.yml \
+         --subject "My test subject" \
 ```
 
-The tool will send the same email body and subject to each recipient in the address file.
+You can also use the `--html` flag if you want to use an html email body.
+
 An SQLite database is used to keep track of sending attempts. If sending fails, simply re-execute the script. The same message will not be sent to the same recipient multiple times (as long as the message body is unchanged).
+
