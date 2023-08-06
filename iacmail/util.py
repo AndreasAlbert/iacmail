@@ -1,3 +1,4 @@
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -41,14 +42,26 @@ def read_user_config_file(user_config_file: Path) -> dict:
     return yaml.load(user_config_file.read_text(), Loader=yaml.SafeLoader)
 
 
-def build_message(message_text: str, address: str, subject: str, user_config: dict,html:bool = False) -> MIMEMultipart:
+def build_message(message_text: str, address: str, subject: str, user_config: dict,html:bool = False, attachments: list[Path] | None = None) -> MIMEMultipart:
     """Generates a MIMEMultiPart representation of a message"""
     message = MIMEMultipart()
-    message["From"] = formataddr(user_config["sender_name"], user_config["sender_email"])
+    message["From"] = formataddr((user_config["sender_name"], user_config["sender_email"]))
     message["To"] = address
     message["Subject"] = subject
     # message["Bcc"] = user_config["sender_email"]
 
+    # Attachments
+    for file in attachments or ():
+        with open(file, "rb") as f:
+            part = MIMEApplication(
+                f.read(),
+                Name=file.name
+            )
+    
+        # After the file is closed
+        part['Content-Disposition'] = f'attachment; filename="{file.name}"'
+        message.attach(part)
+        
     mimetype = "html" if html else "plain"
     message.attach(MIMEText(message_text, mimetype))
     return message

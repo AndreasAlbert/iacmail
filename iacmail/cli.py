@@ -36,8 +36,8 @@ def bespoke(
     message_file: Path = typer.Option(..., help="File containing the body text for the email."),
     user_config_file: Path = typer.Option(..., help="File containting the user configuration."),
     subject: str = typer.Option(..., help="Subject for the email."),
-    html: bool = typer.Option(..., help="Whether to use html")
-
+    html: bool = typer.Option(..., help="Whether to use html"),
+    attachment: Path = typer.Option(..., help="A file to attach.")
 ):
 
     table_data = pd.read_excel(table_path).to_dict(orient="records")
@@ -62,6 +62,8 @@ def bespoke(
     n_failures = 0
     
     unsent_rows = [row for row in table_data if row[address_column] in unsent_addresses]
+    if attachment:
+        attachments = [attachment]
     for row in tqdm.tqdm(unsent_rows, desc="Sending messages"):
         bespoke_text = message_text.format(**row)
         message = build_message(
@@ -69,7 +71,8 @@ def bespoke(
             address=row[address_column],
             user_config=user_config,
             subject=subject,
-            html=html
+            html=html,
+            attachments=attachments
         )
         failures = send_message(
             message=message, addresses=row[address_column], user_config=user_config
