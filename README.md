@@ -73,7 +73,7 @@ The email body will be rendered as HTML if you specify the `--html` flag on the 
 ## Adding attachments
 
 ### Same attachment for every recipient
-You can attach files by specifying `--attachments` on the commandline, e.g."
+You can attach files by specifying `--attachments` on the commandline, e.g.:
 ```
 iacmail ... --attachments /path/to/the/attachment.whatever
 ```
@@ -82,11 +82,11 @@ In this case, all recipients will get the same file sent to them
 
 ### Different attachments for different recipients
 
-You can specify `--attachment-from-column ${NAME_OF_COLUMN}` on the commandline to automatically read the path to the attachment file from the input sheet. In this case, you can specify a different attachment path for every recipient in the input sheet. For example, your sheet could look like this:
+You can specify `--attachment-column ${NAME_OF_COLUMN}` on the commandline to automatically read the path to the attachment file from the input sheet. In this case, you can specify a different attachment path for every recipient in the input sheet. For example, your sheet could look like this:
 
 | name  | email           | attachment |
 | ----- | --------------- | ---------- |
 | Alice | alice@gmail.com | /path/to/file1.txt |
 | Bob   | bob@gmail.com   | /path/to/file2.pdf |
 
-In this case, you would call `iacmail ... --attachment-from-column "attachment"`.
+In this case, you would call `iacmail ... --attachment-column "attachment"`.
