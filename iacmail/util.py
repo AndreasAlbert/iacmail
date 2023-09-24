@@ -42,10 +42,19 @@ def read_user_config_file(user_config_file: Path) -> dict:
     return yaml.load(user_config_file.read_text(), Loader=yaml.SafeLoader)
 
 
-def build_message(message_text: str, address: str, subject: str, user_config: dict,html:bool = False, attachments: list[Path] | None = None) -> MIMEMultipart:
+def build_message(
+    message_text: str,
+    address: str,
+    subject: str,
+    user_config: dict,
+    html: bool = False,
+    attachments: list[Path] | None = None,
+) -> MIMEMultipart:
     """Generates a MIMEMultiPart representation of a message"""
     message = MIMEMultipart()
-    message["From"] = formataddr((user_config["sender_name"], user_config["sender_email"]))
+    message["From"] = formataddr(
+        (user_config["sender_name"], user_config["sender_email"])
+    )
     message["To"] = address
     message["Subject"] = subject
     # message["Bcc"] = user_config["sender_email"]
@@ -53,19 +62,15 @@ def build_message(message_text: str, address: str, subject: str, user_config: di
     # Attachments
     for file in attachments or ():
         with open(file, "rb") as f:
-            part = MIMEApplication(
-                f.read(),
-                Name=file.name
-            )
-    
+            part = MIMEApplication(f.read(), Name=file.name)
+
         # After the file is closed
-        part['Content-Disposition'] = f'attachment; filename="{file.name}"'
+        part["Content-Disposition"] = f'attachment; filename="{file.name}"'
         message.attach(part)
-        
+
     mimetype = "html" if html else "plain"
     message.attach(MIMEText(message_text, mimetype))
     return message
-
 
 
 def send_message(
@@ -76,7 +81,7 @@ def send_message(
         addresses = [addresses]
 
     try:
-        # Server setup        
+        # Server setup
         try:
             logger.debug(
                 f"Connection to server {user_config['smtp_server']} on port {user_config['smtp_port']}."
@@ -96,8 +101,8 @@ def send_message(
         failures = server.sendmail(
             from_addr=user_config["sender_email"],
             to_addrs=addresses + [user_config["sender_email"]],
-            msg=text
-            )
+            msg=text,
+        )
     except smtplib.SMTPRecipientsRefused as exc:
         failures = exc.recipients
     finally:
