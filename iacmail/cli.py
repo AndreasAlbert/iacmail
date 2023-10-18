@@ -46,7 +46,7 @@ def bespoke(
     ),
     subject: str = typer.Option(..., help="Subject for the email."),
     html: bool = typer.Option(..., help="Whether to use html"),
-    attachment: Path = typer.Option(..., help="A file to attach."),
+    attachment: Path = typer.Option(default=None, help="A file to attach."),
     attachment_column: str = typer.Option(
         ..., help="Column name for attachment names."
     ),
@@ -75,13 +75,12 @@ def bespoke(
 
     unsent_rows = [row for row in table_data if row[address_column] in unsent_addresses]
 
-    if attachment:
-        attachments = [attachment]
 
     for row in tqdm.tqdm(unsent_rows, desc="Sending messages"):
         bespoke_text = message_text.format(**row)
 
         # Per-recipient attachments
+        attachments = [attachment] if attachment else []
         if attachment_column:
             if attachment_column not in row:
                 raise ValueError(
@@ -91,7 +90,7 @@ def bespoke(
 
         # Check file existance.
         for attachment in attachments:
-            if not attachment.exists() and attachment.is_file():
+            if not (attachment.exists() and attachment.is_file()):
                 raise FileExistsError(
                     f"Attachment file does not exist or is not a file: {attachment}"
                 )
