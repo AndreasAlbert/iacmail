@@ -48,7 +48,7 @@ def bespoke(
     html: bool = typer.Option(..., help="Whether to use html"),
     attachment: Path = typer.Option(default=None, help="A file to attach."),
     attachment_column: str = typer.Option(
-        ..., help="Column name for attachment names."
+        default=None, help="Column name for attachment names."
     ),
 ):
     table_data = pd.read_excel(table_path).to_dict(orient="records")
