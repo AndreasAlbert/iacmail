@@ -1,11 +1,9 @@
-
 import datetime
 from iacmail.model import SendingAttempt
 from iacmail.util import get_message_hash
 
 
-
-def get_n_attempts(session_maker,message_hash: str, address: str):
+def get_n_attempts(session_maker, message_hash: str, address: str):
     with session_maker() as con:
         return (
             con.query(SendingAttempt)
@@ -14,7 +12,9 @@ def get_n_attempts(session_maker,message_hash: str, address: str):
         )
 
 
-def register_result(session_maker, message_text: str, addresses: set[str], failures: dict):
+def register_result(
+    session_maker, message_text: str, addresses: set[str], failures: dict
+):
     the_time = datetime.datetime.now()
     message_hash = get_message_hash(message_text)
 
@@ -48,12 +48,11 @@ def check_if_already_sent(session_maker, message_text: str, address: str) -> boo
     return attempt is not None
 
 
-
-
 def split_addresses_by_sent(session_maker, addresses: list[str], message: str):
-
     sent_addresses = [
-        address for address in addresses if check_if_already_sent(session_maker,message, address)
+        address
+        for address in addresses
+        if check_if_already_sent(session_maker, message, address)
     ]
     unsent_addresses = set(addresses) - set(sent_addresses)
 
