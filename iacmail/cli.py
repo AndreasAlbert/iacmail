@@ -50,19 +50,25 @@ def bespoke(
     attachment_column: str = typer.Option(
         default=None, help="Column name for attachment names."
     ),
+    cc_column: str = typer.Option(
+        default=None, help="Column name for CC addresses."
+    ),
+    bcc_column: str = typer.Option(
+        default=None, help="Column name for BCC addresses."
+    ),
 ):
     table_data = pd.read_excel(table_path).to_dict(orient="records")
     message_text = read_message_file(message_file)
     user_config = read_user_config_file(user_config_file)
 
-    addresses = [row[address_column] for row in table_data]
+    all_addresses = [row[address_column] for row in table_data]
     user_config = prompt_password_if_needed(user_config)
 
     logger.info(f"Message hash: {get_message_hash(message_text)}")
-    logger.info(f"Found {len(addresses)} addresses in total.")
+    logger.info(f"Found {len(all_addresses)} addresses in total.")
 
     sent_addresses, unsent_addresses = split_addresses_by_sent(
-        session_maker, addresses, message_text
+        session_maker, all_addresses, message_text
     )
 
     if unsent_addresses:
@@ -88,6 +94,10 @@ def bespoke(
                 )
             attachments.append(Path(row[attachment_column]))
 
+        to = row[address_column].split(";")
+        cc = row[cc_column].split(";") if cc_column else None
+        bcc = row[bcc_column].split(";") if bcc_column else None
+
         # Check file existance.
         for attachment in attachments:
             if not (attachment.exists() and attachment.is_file()):
@@ -102,11 +112,12 @@ def bespoke(
             subject=subject,
             html=html,
             attachments=attachments,
+            cc=cc
         )
         failures = send_message(
-            message=message, addresses=row[address_column], user_config=user_config
+            message=message, addresses=to + cc + bcc, user_config=user_config
         )
-        register_result(session_maker, message_text, [row[address_column]], failures)
+        register_result(session_maker, message_text, to, failures)
         n_failures += len(failures)
     if n_failures:
         logger.warning(
