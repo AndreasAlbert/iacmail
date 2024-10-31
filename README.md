@@ -10,6 +10,20 @@ mamba activate iacmail
 pip install -e --no-deps .
 ```
 
+## One-off configuration
+
+We need a file containing one-off configurations:
+
+```yaml
+sender_email: me@myhost.com
+smtp_server: smtp.myhost.com
+smtp_port: 587
+password: mypassword
+```
+
+If you don't want to save your password in the configuration file, you can also omit it. In that case, the script will prompt you for your password at runtime. You will have to retype it for every run.
+
+
 ## Usage
 
 
@@ -40,29 +54,39 @@ X
 
 Fields enclosed in braces will be replaced with the appropriate values from the input sheet.
 
-Then, we need a file containing one-off configurations:
-
-```bash
-$ cat user_config.yaml
-> sender_email: me@myhost.com
-> smtp_server: smtp.myhost.com
-> smtp_port: 587
-> password: "mypassword"
-```
-
-If you don't want to save your password in the configuration file, you can also omit it. In that case, the script will prompt you for your password at runtime. You will have to retype it for every run.
-
 Finally, let's use the command line utility:
 
 ```bash
 iacmail  --table-path ./recipients.xlsx \
-         --address-column "email" \ 
+         --address-column "email" \
          --message-file message.txt \
          --user-config-file user_config_aa.yml \
-         --subject "My test subject" \
+         --subject "My test subject"
 ```
-
-You can also use the `--html` flag if you want to use an html email body.
 
 An SQLite database is used to keep track of sending attempts. If sending fails, simply re-execute the script. The same message will not be sent to the same recipient multiple times (as long as the message body is unchanged).
 
+## Using an HTML body
+
+The email body will be rendered as HTML if you specify the `--html` flag on the commandline
+
+## Adding attachments
+
+### Same attachment for every recipient
+You can attach files by specifying `--attachments` on the commandline, e.g.:
+```
+iacmail ... --attachments /path/to/the/attachment.whatever
+```
+
+In this case, all recipients will get the same file sent to them
+
+### Different attachments for different recipients
+
+You can specify `--attachment-column ${NAME_OF_COLUMN}` on the commandline to automatically read the path to the attachment file from the input sheet. In this case, you can specify a different attachment path for every recipient in the input sheet. For example, your sheet could look like this:
+
+| name  | email           | attachment |
+| ----- | --------------- | ---------- |
+| Alice | alice@gmail.com | /path/to/file1.txt |
+| Bob   | bob@gmail.com   | /path/to/file2.pdf |
+
+In this case, you would call `iacmail ... --attachment-column "attachment"`.
