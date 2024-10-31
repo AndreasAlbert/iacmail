@@ -49,6 +49,7 @@ def build_message(
     user_config: dict,
     html: bool = False,
     attachments: list[Path] | None = None,
+    cc: list[str] | None = None
 ) -> MIMEMultipart:
     """Generates a MIMEMultiPart representation of a message"""
     message = MIMEMultipart()
@@ -57,7 +58,7 @@ def build_message(
     )
     message["To"] = address
     message["Subject"] = subject
-    # message["Bcc"] = user_config["sender_email"]
+    message["Cc"] = ",".join(cc) if cc else ""
 
     # Attachments
     for file in attachments or ():
